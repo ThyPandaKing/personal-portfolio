@@ -1,7 +1,10 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+# --include=dev: the build needs devDependencies (tsc, vite, @types/*) even if
+# NODE_ENV=production is set. npm ci (deterministic, from the lockfile) — not
+# npm install, which can crash on build hosts.
+RUN npm ci --include=dev --no-audit --no-fund
 COPY . .
 RUN npm run build
 
