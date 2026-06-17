@@ -1,0 +1,81 @@
+# Render Blueprint — deploys the backend and agent-service.
+# (Frontend deploys separately on Vercel — see frontend/vercel.json.)
+#
+# Usage: Render Dashboard → New → Blueprint → point at this repo.
+# Secrets marked `sync: false` are entered in the Render dashboard, not committed.
+#
+# There is NO vector-store service: RAG vectors live in MongoDB Atlas
+# (Atlas Vector Search), the same DB used for everything else.
+
+services:
+  # ---------------- Backend (Node + Express) ----------------
+  - type: web
+    name: portfolio-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_DOMAIN
+        value: ""
+      # Set these in the dashboard:
+      - key: CLIENT_ORIGINS          # https://your-app.vercel.app
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB
+        value: portfolio
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: INTERNAL_API_KEY
+        generateValue: true
+      - key: AGENT_SERVICE_URL       # https://portfolio-agent.onrender.com
+        sync: false
+      - key: PUBLIC_BASE_URL         # https://portfolio-backend.onrender.com
+        sync: false
+
+  # ---------------- Agent service (Python + FastAPI) ----------------
+  - type: web
+    name: portfolio-agent
+    runtime: docker
+    rootDir: agent-service
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8001
+      - key: ALLOWED_ORIGINS         # https://portfolio-backend.onrender.com
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_MODELS
+        value: gemini-2.5-flash,gemini-flash-latest,gemini-2.0-flash
+      - key: GEMINI_EMBED_MODEL
+        value: models/gemini-embedding-001
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DB
+        value: portfolio
+      # Vectors live in MongoDB Atlas (Atlas Vector Search) — no separate service.
+      - key: VECTOR_COLLECTION
+        value: portfolio_vectors
+      - key: EMBED_DIMS
+        value: 3072
+      - key: INTERNAL_API_KEY        # must match the backend's value
+        sync: false

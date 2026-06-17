@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+  /* Light mode highlight = sun yellow (RGB triplets for Tailwind alpha support) */
+  --accent: 234 179 8;
+  --accent-hover: 202 138 4;
+  --accent-contrast: 30 41 59;
+  /* Light mode brand ramp = amber/yellow */
+  --brand-50: 254 252 232;
+  --brand-100: 254 249 195;
+  --brand-200: 253 230 138;
+  --brand-300: 252 211 77;
+  --brand-400: 251 191 36;
+  --brand-500: 245 158 11;
+  --brand-600: 217 119 6;
+  --brand-700: 180 83 9;
+  --brand-800: 146 64 14;
+  --brand-900: 120 53 15;
+}
+
+.dark {
+  color-scheme: dark;
+  /* Dark mode highlight = star/moon white */
+  --accent: 248 250 252;
+  --accent-hover: 226 232 240;
+  --accent-contrast: 15 23 42;
+  /* Dark mode brand ramp = white → light slate (so accents/gradients read white) */
+  --brand-50: 248 250 252;
+  --brand-100: 241 245 249;
+  --brand-200: 226 232 240;
+  --brand-300: 248 250 252;
+  --brand-400: 241 245 249;
+  --brand-500: 255 255 255;
+  --brand-600: 248 250 252;
+  --brand-700: 203 213 225;
+  --brand-800: 148 163 184;
+  --brand-900: 226 232 240;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  /* Fallback colors behind the animated <Background />: sky for light, black for dark */
+  @apply bg-sky-100 text-slate-900 antialiased transition-colors duration-300 dark:bg-black dark:text-slate-100;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Slightly translucent + blurred so the starry/sky backdrop shows through.
+     Glow is theme-tinted (yellow-ish light, white-ish dark) via shadow-glow. */
+  .card {
+    @apply rounded-2xl border border-slate-200/70 bg-white/80 shadow-glow backdrop-blur-md transition-shadow duration-300 hover:shadow-glow-lg dark:border-slate-700/60 dark:bg-slate-900/70;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 dark:focus:ring-offset-slate-950 disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-accent-contrast shadow-glow hover:bg-accent-hover hover:shadow-glow-lg;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-slate-300 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-slate-700 dark:bg-slate-900/90;
+  }
+
+  .label {
+    @apply mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300;
+  }
+}
+
+/* ---------------- Background animations ---------------- */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+@keyframes shoot {
+  0% { opacity: 0; transform: translate(0, 0) rotate(20deg); }
+  3% { opacity: 1; }
+  12% { opacity: 0; transform: translate(40vw, 22vh) rotate(20deg); }
+  100% { opacity: 0; }
+}
+@keyframes sun-pulse {
+  0%, 100% { box-shadow: 0 0 40px 10px rgba(250, 204, 21, 0.55); }
+  50% { box-shadow: 0 0 70px 22px rgba(250, 204, 21, 0.85); }
+}
+@keyframes drift {
+  from { transform: translateX(-20vw); }
+  to { transform: translateX(120vw); }
+}
+@keyframes fly {
+  0% { transform: translate(-12vw, 0); }
+  50% { transform: translate(55vw, -6vh); }
+  100% { transform: translate(120vw, 0); }
+}
+@keyframes flap {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.55); }
+}
+@keyframes splash-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="animation"] { animation: none !important; }
+}

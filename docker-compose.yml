@@ -1,0 +1,31 @@
+services:
+  # MongoDB is hosted on MongoDB Atlas (cloud) — set MONGO_URI in the
+  # backend/agent-service .env files. It holds documents, GridFS files AND the
+  # RAG vectors (Atlas Vector Search), so there is no separate DB/vector service.
+
+  backend:
+    build: ./backend
+    container_name: portfolio-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./backend/.env
+
+  agent-service:
+    build: ./agent-service
+    container_name: portfolio-agent
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./agent-service/.env
+
+  frontend:
+    build: ./frontend
+    container_name: portfolio-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend

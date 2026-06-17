@@ -1,0 +1,26 @@
+# Python 3.14 — all packages resolve to cp314 wheels.
+# Pinned to the versions verified to import/construct on 3.14.
+# Full transitive lock: requirements.lock.txt
+
+fastapi==0.137.1
+uvicorn[standard]==0.49.0
+# Required by FastAPI for multipart/form-data (PDF upload endpoint)
+python-multipart==0.0.32
+
+pydantic==2.13.4
+pydantic-settings==2.14.1
+python-dotenv==1.2.2
+
+pymongo==4.17.0
+dnspython==2.8.0
+# CA bundle so pymongo can verify the Atlas TLS certificate on systems whose
+# Python doesn't use the OS trust store (e.g. macOS).
+certifi>=2024.0.0
+
+langgraph==1.2.5
+langchain==1.3.9
+langchain-core==1.4.7
+langchain-google-genai==4.2.5
+
+pypdf==6.13.2
+httpx==0.28.1

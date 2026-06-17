@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.venv/
+**/__pycache__/
+*.pyc
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+**/.env
+!**/.env.example
+
+# Data (files live in MongoDB GridFS, not on disk)
+**/chroma_data/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.log
