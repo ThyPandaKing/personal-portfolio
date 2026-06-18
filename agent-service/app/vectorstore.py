@@ -6,6 +6,7 @@ stored on documents in the `vector_collection`; similarity search uses the
 `$vectorSearch` aggregation stage against an Atlas Vector Search index.
 """
 import logging
+import re
 import time
 from typing import Any
 
@@ -33,26 +34,60 @@ def _is_rate_limit_error(exc: BaseException) -> bool:
     )
 
 
+# Gemini 429s tell us exactly how long to wait, in two readable spots:
+#   * the human message: "Please retry in 10.242972704s."
+#   * the structured RetryInfo detail: "'retryDelay': '10s'"
+# Prefer the message form (sub-second precision) and fall back to retryDelay.
+_RETRY_DELAY_PATTERNS = (
+    re.compile(r"retry\s+in\s+(\d+(?:\.\d+)?)\s*s", re.IGNORECASE),
+    re.compile(r"retrydelay['\"]?\s*[:=]\s*['\"]?(\d+(?:\.\d+)?)\s*s", re.IGNORECASE),
+)
+
+
 def _retry_after_seconds(exc: BaseException, default: float) -> float:
-    """Honor a server-provided retry delay if present, else use the supplied backoff."""
-    retry_delay = getattr(exc, "retry_after", None)
-    if isinstance(retry_delay, (int, float)) and retry_delay > 0:
-        return float(retry_delay)
+    """Use Gemini's server-provided retry delay when present, else the backoff default.
+
+    Adds a 1s safety margin (and caps at 60s) so we never retry a hair too early.
+    """
+    # Some client wrappers also surface it as an attribute — honor that first.
+    attr = getattr(exc, "retry_after", None)
+    if isinstance(attr, (int, float)) and attr > 0:
+        return float(attr)
+
+    text = str(exc)
+    for pattern in _RETRY_DELAY_PATTERNS:
+        match = pattern.search(text)
+        if match:
+            return min(float(match.group(1)) + 1.0, 60.0)
     return default
 
 
 def _embed_documents_with_retry(texts: list[str]) -> list[list[float]]:
-    """Embed texts in batches, retrying each batch with exponential backoff on 429s.
+    """Embed texts in paced batches, retrying on 429s.
 
-    Embeddings are deliberately not part of the chat model fallback chain, so this
-    is where free-tier rate limits are absorbed instead of bubbling up as a 500.
+    The Gemini free tier counts each chunk as one embed request (~100/min), so we
+    space batches to stay under embed_rpm_limit and rarely trip a 429 in the first
+    place; the backoff retry is the backstop if we still do. Embeddings are
+    deliberately outside the chat model fallback chain, so this is where free-tier
+    rate limits are absorbed instead of bubbling up as a 500.
     """
     settings = get_settings()
     embeddings = get_embeddings()
     batch_size = max(1, settings.embed_batch_size)
+    rpm_limit = max(1, settings.embed_rpm_limit)
+    min_batch_interval = batch_size / rpm_limit * 60.0  # seconds between batch starts
     vectors: list[list[float]] = []
+    last_batch_start: float | None = None
     for start in range(0, len(texts), batch_size):
         batch = texts[start : start + batch_size]
+        # Pace: keep at least min_batch_interval between batch starts so the request
+        # rate stays under the free-tier quota. Retry sleeps below also widen this
+        # gap, so a throttled batch adds no extra wait.
+        if last_batch_start is not None:
+            elapsed = time.monotonic() - last_batch_start
+            if elapsed < min_batch_interval:
+                time.sleep(min_batch_interval - elapsed)
+        last_batch_start = time.monotonic()
         delay = settings.embed_retry_base_delay
         for attempt in range(1, settings.embed_max_retries + 1):
             try:

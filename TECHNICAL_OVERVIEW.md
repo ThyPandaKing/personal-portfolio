@@ -282,9 +282,11 @@ documents.
 
 ### 5.5 Reliability features
 - **Model fallback chain** so a single Gemini model outage doesn't take the bot down.
-- **Embedding retry/backoff** ([`vectorstore._embed_documents_with_retry`](agent-service/app/vectorstore.py)):
-  batches of 50, exponential backoff (2 s → … → 60 s, up to 5 tries) specifically on rate‑limit
-  (429) errors — the original cause of re‑ingest 500s on the Gemini free tier.
+- **Embedding pacing + retry** ([`vectorstore._embed_documents_with_retry`](agent-service/app/vectorstore.py)):
+  the free tier counts each chunk as one embed request (~100/min), so re‑ingest **paces**
+  batches to stay under `embed_rpm_limit` (default ~90 chunks/min) and rarely trips a 429.
+  If it still does, it retries using the server's own `retryDelay` from the 429 (else
+  exponential backoff, up to 5 tries) — this was the original cause of re‑ingest 500s.
 - **Async re‑ingest with status** so long/rate‑limited runs return immediately and surface
   success/failure via `GET /ingest/status` instead of timing out.
 - **Cold‑start warmup** (frontend on‑visit + the scheduled GitHub Action) so the first real
