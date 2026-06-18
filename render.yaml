@@ -44,7 +44,7 @@ services:
         generateValue: true
       - key: AGENT_SERVICE_URL       # https://portfolio-agent.onrender.com
         sync: false
-      - key: PUBLIC_BASE_URL         # https://portfolio-backend.onrender.com
+      - key: PUBLIC_BASE_URL         # https://portfolio-backend-7ocw.onrender.com
         sync: false
 
   # ---------------- Agent service (Python + FastAPI) ----------------
@@ -58,7 +58,7 @@ services:
     envVars:
       - key: PORT
         value: 8001
-      - key: ALLOWED_ORIGINS         # https://portfolio-backend.onrender.com
+      - key: ALLOWED_ORIGINS         # https://portfolio-backend-7ocw.onrender.com
         sync: false
       - key: GOOGLE_API_KEY
         sync: false

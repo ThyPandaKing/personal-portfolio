@@ -289,7 +289,7 @@ The repo includes [`render.yaml`](../render.yaml), which declares **both** servi
    | `ADMIN_EMAILS` | your Gmail (comma-separated for several admins) |
    | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | from §6.2 |
    | `AGENT_SERVICE_URL` | `https://portfolio-agent.onrender.com` |
-   | `PUBLIC_BASE_URL` | `https://portfolio-backend.onrender.com` |
+   | `PUBLIC_BASE_URL` | `https://portfolio-backend-7ocw.onrender.com` |
    | `COOKIE_SECURE` | `true` (HTTPS in prod) · `COOKIE_DOMAIN` empty |
    | `JWT_SECRET`, `INTERNAL_API_KEY` | **auto-generated** by the blueprint |
 
@@ -320,7 +320,7 @@ The repo includes [`render.yaml`](../render.yaml), which declares **both** servi
    ```json
    {
      "rewrites": [
-       { "source": "/api/(.*)", "destination": "https://portfolio-backend.onrender.com/api/$1" },
+       { "source": "/api/(.*)", "destination": "https://portfolio-backend-7ocw.onrender.com/api/$1" },
        { "source": "/(.*)", "destination": "/index.html" }
      ]
    }
