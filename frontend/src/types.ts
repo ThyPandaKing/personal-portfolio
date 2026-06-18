@@ -1,8 +1,31 @@
-export interface AdminUser {
+export type Role = "admin" | "visitor";
+
+export interface AuthUser {
   id: string;
   email: string;
   name: string;
   picture: string;
+  role: Role;
+  headline?: string;
+  bio?: string;
+  location?: string;
+}
+
+/** @deprecated kept as an alias; the signed-in user may be an admin or a visitor. */
+export type AdminUser = AuthUser;
+
+/** A visitor account as listed on the admin dashboard. */
+export interface VisitorUser {
+  id: string;
+  email: string;
+  name: string;
+  picture: string;
+  role: Role;
+  headline: string;
+  bio: string;
+  location: string;
+  createdAt: string;
+  lastLoginAt?: string;
 }
 
 export interface Social {
@@ -98,6 +121,7 @@ export interface Blog {
   published: boolean;
   publishedAt?: string;
   readingMinutes: number;
+  author?: { userId?: string; name: string; email: string };
   createdAt: string;
   updatedAt: string;
 }

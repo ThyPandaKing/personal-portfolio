@@ -3,7 +3,8 @@ import { z } from "zod";
 import { env, isAdminEmail } from "../config/env.js";
 import { UserModel } from "../models/User.js";
 import { SESSION_COOKIE, signSession, verifyGoogleIdToken } from "../services/auth.js";
-import { asyncHandler, forbidden, unauthorized } from "../utils/http.js";
+import { asyncHandler, unauthorized } from "../utils/http.js";
+import { toPublicUser } from "./users.js";
 
 export const authRouter = Router();
 
@@ -35,27 +36,29 @@ authRouter.post(
       throw unauthorized("Invalid or expired Google credential.");
     }
 
-    if (!isAdminEmail(profile.email)) {
-      throw forbidden("This account is not authorized as admin.");
-    }
+    // Any valid Google account may sign in. Admin status is granted only to
+    // emails on the ADMIN_EMAILS allowlist; everyone else is a "visitor".
+    const role = isAdminEmail(profile.email) ? "admin" : "visitor";
 
     const user = await UserModel.findOneAndUpdate(
       { email: profile.email },
       {
+        // `name` is set once on creation so a visitor's later profile edits
+        // aren't clobbered by Google on each subsequent login.
+        $setOnInsert: { name: profile.name },
         $set: {
           googleId: profile.googleId,
-          name: profile.name,
           picture: profile.picture,
-          role: "admin",
+          role,
           lastLoginAt: new Date(),
         },
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
 
-    const token = signSession({ sub: String(user._id), email: user.email, role: "admin" });
+    const token = signSession({ sub: String(user._id), email: user.email, role: user.role });
     res.cookie(SESSION_COOKIE, token, cookieOptions);
-    res.json({ user: { id: user._id, email: user.email, name: user.name, picture: user.picture } });
+    res.json({ user: toPublicUser(user) });
   }),
 );
 
@@ -72,8 +75,6 @@ authRouter.get(
     if (!req.user) return res.json({ user: null });
     const user = await UserModel.findById(req.user.sub).lean();
     if (!user) return res.json({ user: null });
-    res.json({
-      user: { id: user._id, email: user.email, name: user.name, picture: user.picture },
-    });
+    res.json({ user: toPublicUser(user) });
   }),
 );

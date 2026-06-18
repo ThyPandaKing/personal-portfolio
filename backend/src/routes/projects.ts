@@ -37,7 +37,7 @@ projectsRouter.get(
     const filter: Record<string, unknown> = {};
     const type = req.query.type as string | undefined;
     if (type && (PROJECT_TYPES as readonly string[]).includes(type)) filter.type = type;
-    if (!req.user) filter.published = true;
+    if (req.user?.role !== "admin") filter.published = true;
 
     // Skill / tool filter (case-insensitive exact match on a skillsUsed entry).
     const skill = (req.query.skill ?? req.query.tool) as string | undefined;
@@ -71,7 +71,8 @@ projectsRouter.get(
   "/:slug",
   asyncHandler(async (req, res) => {
     const project = await ProjectModel.findOne({ slug: req.params.slug }).lean();
-    if (!project || (!project.published && !req.user)) throw notFound("Project not found");
+    if (!project || (!project.published && req.user?.role !== "admin"))
+      throw notFound("Project not found");
     res.json(project);
   }),
 );

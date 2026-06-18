@@ -42,6 +42,9 @@ export default function BlogAdmin() {
                 <p className="flex items-center gap-2 font-medium">
                   {b.title}
                   {!b.published && <span className="text-xs text-amber-500">draft</span>}
+                  {b.author?.name && (
+                    <span className="text-xs font-normal text-slate-400">by {b.author.name}</span>
+                  )}
                 </p>
                 <p className="truncate text-sm text-slate-400">{b.excerpt}</p>
               </div>

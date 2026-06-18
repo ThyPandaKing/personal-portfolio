@@ -10,6 +10,10 @@ export const endpoints = {
     logout: "/auth/logout",
     me: "/auth/me",
   },
+  users: {
+    root: "/users",
+    me: "/users/me",
+  },
   profile: {
     root: "/profile",
     image: "/profile/image",

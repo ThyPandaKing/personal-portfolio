@@ -12,6 +12,12 @@ const blogSchema = new Schema(
     published: { type: Boolean, default: false, index: true },
     publishedAt: { type: Date },
     readingMinutes: { type: Number, default: 1 },
+    // Who wrote it. Set for visitor submissions (and admin posts); legacy posts have none.
+    author: {
+      userId: { type: Schema.Types.ObjectId, ref: "User" },
+      name: { type: String, default: "" },
+      email: { type: String, default: "" },
+    },
   },
   { timestamps: true },
 );

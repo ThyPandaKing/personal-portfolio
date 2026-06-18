@@ -8,25 +8,28 @@ import {
 } from "react";
 import { endpoints } from "../api/endpoints";
 import { api } from "../lib/api";
-import type { AdminUser } from "../types";
+import type { AuthUser, Role } from "../types";
 
 interface AuthContextValue {
-  user: AdminUser | null;
+  user: AuthUser | null;
   loading: boolean;
+  role: Role | null;
   isAdmin: boolean;
+  isVisitor: boolean;
   loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AdminUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
-      const { data } = await api.get<{ user: AdminUser | null }>(endpoints.auth.me);
+      const { data } = await api.get<{ user: AuthUser | null }>(endpoints.auth.me);
       setUser(data.user);
     } catch {
       setUser(null);
@@ -40,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const loginWithGoogle = useCallback(async (credential: string) => {
-    const { data } = await api.post<{ user: AdminUser }>(endpoints.auth.google, { credential });
+    const { data } = await api.post<{ user: AuthUser }>(endpoints.auth.google, { credential });
     setUser(data.user);
   }, []);
 
@@ -51,7 +54,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, isAdmin: !!user, loginWithGoogle, logout }}
+      value={{
+        user,
+        loading,
+        role: user?.role ?? null,
+        isAdmin: user?.role === "admin",
+        isVisitor: user?.role === "visitor",
+        loginWithGoogle,
+        logout,
+        refresh,
+      }}
     >
       {children}
     </AuthContext.Provider>

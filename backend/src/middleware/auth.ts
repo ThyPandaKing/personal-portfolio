@@ -31,3 +31,11 @@ export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
   }
   next();
 }
+
+/** Gates a route to any authenticated user (admin or visitor). */
+export function requireAuth(req: Request, _res: Response, next: NextFunction) {
+  if (!req.user) {
+    return next(unauthorized("Authentication required"));
+  }
+  next();
+}

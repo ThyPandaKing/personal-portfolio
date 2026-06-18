@@ -8,6 +8,7 @@ import { projectsRouter } from "./projects.js";
 import { resumesRouter } from "./resumes.js";
 import { skillsRouter } from "./skills.js";
 import { uploadsRouter } from "./uploads.js";
+import { usersRouter } from "./users.js";
 
 export const apiRouter = Router();
 
@@ -16,6 +17,7 @@ apiRouter.get("/", (_req, res) => {
 });
 
 apiRouter.use("/auth", authRouter);
+apiRouter.use("/users", usersRouter);
 apiRouter.use("/profile", profileRouter);
 apiRouter.use("/skills", skillsRouter);
 apiRouter.use("/projects", projectsRouter);

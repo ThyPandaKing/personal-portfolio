@@ -29,10 +29,12 @@ export async function verifyGoogleIdToken(credential: string): Promise<GooglePro
   };
 }
 
+export type Role = "admin" | "visitor";
+
 export interface SessionClaims {
   sub: string; // user id
   email: string;
-  role: "admin";
+  role: Role;
 }
 
 export function signSession(claims: SessionClaims): string {

@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { warmup } from "./api/chat";
 import Layout from "./components/layout/Layout";
 import RequireAdmin from "./components/RequireAdmin";
+import RequireAuth from "./components/RequireAuth";
 import Spinner from "./components/ui/Spinner";
 
 // Public pages
@@ -22,6 +23,12 @@ const ProjectsAdmin = lazy(() => import("./pages/admin/ProjectsAdmin"));
 const BlogAdmin = lazy(() => import("./pages/admin/BlogAdmin"));
 const ResumesAdmin = lazy(() => import("./pages/admin/ResumesAdmin"));
 const ChatbotAdmin = lazy(() => import("./pages/admin/ChatbotAdmin"));
+const VisitorsAdmin = lazy(() => import("./pages/admin/VisitorsAdmin"));
+
+// Visitor (signed-in, non-admin) pages
+const AccountLayout = lazy(() => import("./pages/account/AccountLayout"));
+const VisitorProfile = lazy(() => import("./pages/account/VisitorProfile"));
+const VisitorBlogForm = lazy(() => import("./pages/account/VisitorBlogForm"));
 
 export default function App() {
   // Pre-heat the free-tier backends on first load so the chatbot is ready fast.
@@ -53,7 +60,20 @@ export default function App() {
             <Route path="projects" element={<ProjectsAdmin />} />
             <Route path="blog" element={<BlogAdmin />} />
             <Route path="resumes" element={<ResumesAdmin />} />
+            <Route path="visitors" element={<VisitorsAdmin />} />
             <Route path="chatbot" element={<ChatbotAdmin />} />
+          </Route>
+
+          <Route
+            path="account"
+            element={
+              <RequireAuth>
+                <AccountLayout />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<VisitorProfile />} />
+            <Route path="blog/new" element={<VisitorBlogForm />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

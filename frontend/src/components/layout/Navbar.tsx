@@ -13,7 +13,7 @@ const navItems = [
 ];
 
 export default function Navbar() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isVisitor } = useAuth();
   const [open, setOpen] = useState(false);
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -38,6 +38,11 @@ export default function Navbar() {
               {item.label}
             </NavLink>
           ))}
+          {isVisitor && (
+            <NavLink to="/account" className={linkClass}>
+              Dashboard
+            </NavLink>
+          )}
           {isAdmin && (
             <NavLink to="/admin" className={linkClass}>
               Admin
@@ -74,6 +79,11 @@ export default function Navbar() {
                 {item.label}
               </NavLink>
             ))}
+            {isVisitor && (
+              <NavLink to="/account" className={linkClass} onClick={() => setOpen(false)}>
+                Dashboard
+              </NavLink>
+            )}
             {isAdmin && (
               <NavLink to="/admin" className={linkClass} onClick={() => setOpen(false)}>
                 Admin

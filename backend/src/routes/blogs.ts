@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAdmin } from "../middleware/auth.js";
+import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { BlogModel } from "../models/Blog.js";
+import { UserModel } from "../models/User.js";
 import { asyncHandler, notFound } from "../utils/http.js";
 import { escapeRegex } from "../utils/query.js";
 import { uniqueSlug } from "../utils/slug.js";
@@ -21,13 +22,14 @@ const readingMinutes = (content: string) =>
   Math.max(1, Math.round(content.split(/\s+/).filter(Boolean).length / 200));
 
 /**
- * GET /api/blogs — visitors see published only.
+ * GET /api/blogs — only admins see drafts; everyone else (visitors + anon) sees published.
  * Filters: ?tag=react   ?q=text (content search across title/excerpt/content/tags)
  */
 blogsRouter.get(
   "/",
   asyncHandler(async (req, res) => {
-    const filter: Record<string, unknown> = req.user ? {} : { published: true };
+    const filter: Record<string, unknown> =
+      req.user?.role === "admin" ? {} : { published: true };
 
     const tag = (req.query.tag as string | undefined)?.trim();
     if (tag) {
@@ -50,22 +52,35 @@ blogsRouter.get(
   "/:slug",
   asyncHandler(async (req, res) => {
     const blog = await BlogModel.findOne({ slug: req.params.slug }).lean();
-    if (!blog || (!blog.published && !req.user)) throw notFound("Article not found");
+    if (!blog || (!blog.published && req.user?.role !== "admin"))
+      throw notFound("Article not found");
     res.json(blog);
   }),
 );
 
+// Admins and visitors can both create articles. Visitor submissions are always
+// saved as drafts (published=false) — an admin reviews and publishes them.
 blogsRouter.post(
   "/",
-  requireAdmin,
+  requireAuth,
   asyncHandler(async (req, res) => {
     const data = blogSchema.parse(req.body);
+    const isAdmin = req.user!.role === "admin";
+    const published = isAdmin ? data.published : false;
+
+    const author = await UserModel.findById(req.user!.sub).lean();
     const slug = await uniqueSlug(BlogModel, data.title);
     const blog = await BlogModel.create({
       ...data,
+      published,
       slug,
       readingMinutes: readingMinutes(data.content),
-      publishedAt: data.published ? new Date() : undefined,
+      publishedAt: published ? new Date() : undefined,
+      author: {
+        userId: req.user!.sub,
+        name: author?.name ?? "",
+        email: req.user!.email,
+      },
     });
     res.status(201).json(blog);
   }),

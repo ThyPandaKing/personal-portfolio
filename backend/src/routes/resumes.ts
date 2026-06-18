@@ -22,7 +22,7 @@ const resumeSchema = z.object({
 resumesRouter.get(
   "/",
   asyncHandler(async (req, res) => {
-    const filter = req.user ? {} : { isPublic: true };
+    const filter = req.user?.role === "admin" ? {} : { isPublic: true };
     const resumes = await ResumeModel.find(filter).sort({ createdAt: -1 }).lean();
     res.json(resumes);
   }),
@@ -32,7 +32,8 @@ resumesRouter.get(
   "/:id",
   asyncHandler(async (req, res) => {
     const resume = await ResumeModel.findById(req.params.id).lean();
-    if (!resume || (!resume.isPublic && !req.user)) throw notFound("Resume not found");
+    if (!resume || (!resume.isPublic && req.user?.role !== "admin"))
+      throw notFound("Resume not found");
     res.json(resume);
   }),
 );

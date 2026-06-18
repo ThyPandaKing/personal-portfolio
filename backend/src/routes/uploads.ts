@@ -1,15 +1,18 @@
 import { Router } from "express";
-import { requireAdmin } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth.js";
 import { upload } from "../middleware/upload.js";
 import { fileUrlFor, uploadBuffer } from "../services/gridfs.js";
 import { asyncHandler, badRequest } from "../utils/http.js";
 
 export const uploadsRouter = Router();
 
-/** POST /api/uploads — admin uploads any supported file to GridFS, returns its public URL. */
+/**
+ * POST /api/uploads — any signed-in user (admin or visitor) uploads a file to
+ * GridFS and gets its public URL. Visitors need this for blog cover images.
+ */
 uploadsRouter.post(
   "/",
-  requireAdmin,
+  requireAuth,
   upload.single("file"),
   asyncHandler(async (req, res) => {
     if (!req.file) throw badRequest("No file uploaded");
