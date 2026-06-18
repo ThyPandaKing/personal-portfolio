@@ -36,6 +36,10 @@ class IngestResponse(BaseModel):
 class StatusResponse(BaseModel):
     indexed_chunks: int
     collection: str
+    # Background re-ingest job state: idle | running | succeeded | failed
+    ingest_state: str = "idle"
+    ingest_detail: dict | None = None
+    ingest_error: str | None = None
 
 
 class ResumeGenerateRequest(BaseModel):

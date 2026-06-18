@@ -1,6 +1,6 @@
 import io
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from pypdf import PdfReader
 
 from app import rag, vectorstore
@@ -14,16 +14,25 @@ router = APIRouter(prefix="/ingest", tags=["ingest"], dependencies=[Depends(requ
 def status() -> StatusResponse:
     from app.config import get_settings
 
+    job = rag.ingest_status
     return StatusResponse(
         indexed_chunks=vectorstore.collection_count(),
         collection=get_settings().vector_collection,
+        ingest_state=job.get("state", "idle"),
+        ingest_detail=job.get("detail"),
+        ingest_error=job.get("error"),
     )
 
 
 @router.post("/portfolio", response_model=IngestResponse)
-def ingest_portfolio() -> IngestResponse:
-    counts = rag.ingest_portfolio()
-    return IngestResponse(ok=True, chunks=counts.get("chunks", 0), detail=counts)
+def ingest_portfolio(background_tasks: BackgroundTasks) -> IngestResponse:
+    """Kick off a full re-ingest in the background and return immediately.
+
+    The work (and any rate-limit retries) runs after the response is sent; poll
+    GET /ingest/status for progress and the final chunk counts.
+    """
+    background_tasks.add_task(rag.run_portfolio_ingest_job)
+    return IngestResponse(ok=True, chunks=0, detail={"status": "started"})
 
 
 @router.post("/document", response_model=IngestResponse)

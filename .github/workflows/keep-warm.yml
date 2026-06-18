@@ -1,0 +1,54 @@
+name: Keep Render services warm
+
+# Render free-tier instances spin down after ~15 min of no inbound traffic and
+# then cold-start (30-50s) on the next request. This workflow pings them every
+# 10 minutes during the India afternoon/evening window so the app feels instant
+# for the bulk of daily visitors. Outside the window the services are allowed to
+# sleep, and the on-visit pre-heat (frontend App.tsx -> GET /api/chat/warmup)
+# wakes them on demand whenever someone opens the app.
+#
+# COST GUARDRAILS (do not widen the window without redoing this math):
+#   * Render free tier = 750 instance-hours / month / account, shared across all
+#     free services. This project runs TWO free services (backend + agent).
+#   * The cron below covers 15:00-22:00 IST  ==  09:30-16:30 UTC (IST = UTC+5:30).
+#     That keeps both services up ~7h/day:  2 services x 7h x 30d = ~420 hrs/mo,
+#     leaving ~330 hrs of headroom for organic traffic + on-visit wakes.
+#   * A 24/7 pinger would need 2 x 24 x 30 = 1440 hrs and would exhaust the free
+#     allotment around the middle of the month, taking the app offline.
+#   * Each run is a couple of short curls, so GitHub Actions minutes stay
+#     negligible even on a private repo (well under the 2000 min/mo free pool).
+#
+# NOTE: GitHub disables scheduled workflows after 60 days of repo inactivity,
+# and "*/10" schedules are best-effort (may be delayed under load). The on-visit
+# warmup is the reliable safety net; this cron is just an optimization.
+
+on:
+  schedule:
+    # Window = 15:00-22:00 IST (09:30-16:30 UTC). The 30-min IST offset is why
+    # the edges need their own lines instead of one clean hour range.
+    - cron: "30,40,50 9 * * *"    # 15:00-15:20 IST
+    - cron: "*/10 10-15 * * *"    # 15:30-21:20 IST
+    - cron: "0,10,20,30 16 * * *" # 21:30-22:00 IST
+  workflow_dispatch: {} # allow a manual "wake now" from the Actions tab
+
+# Don't let a slow cold-start run pile up behind the next scheduled tick.
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping backend (its /warmup also pings the agent service)
+        run: |
+          curl -sS -o /dev/null -w "backend: HTTP %{http_code} in %{time_total}s\n" \
+            --max-time 90 --retry 3 --retry-delay 5 --retry-all-errors \
+            "https://portfolio-backend-7ocw.onrender.com/api/chat/warmup" || true
+
+      - name: Ping agent service directly (covers it even if backend is slow)
+        run: |
+          curl -sS -o /dev/null -w "agent: HTTP %{http_code} in %{time_total}s\n" \
+            --max-time 90 --retry 3 --retry-delay 5 --retry-all-errors \
+            "https://portfolio-agent-r09k.onrender.com/health" || true

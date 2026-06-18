@@ -13,7 +13,14 @@ import { apiErrorMessage } from "../../lib/api";
 
 export default function ChatbotAdmin() {
   const qc = useQueryClient();
-  const { data: status } = useQuery({ queryKey: ["rag-status"], queryFn: ragStatus, retry: false });
+  const { data: status } = useQuery({
+    queryKey: ["rag-status"],
+    queryFn: ragStatus,
+    retry: false,
+    // Re-ingest runs in the background; poll while it's running so the chunk
+    // count and final success/failure show up without a manual refresh.
+    refetchInterval: (q) => (q.state.data?.ingest_state === "running" ? 3000 : false),
+  });
   const [docTitle, setDocTitle] = useState("");
   const [docText, setDocText] = useState("");
   const [pdfTitle, setPdfTitle] = useState("");
@@ -34,7 +41,7 @@ export default function ChatbotAdmin() {
 
   const reingest = useMutation({
     mutationFn: reingestPortfolio,
-    onSuccess: (d) => ok(`Re-indexed portfolio: ${d.chunks} chunks.`),
+    onSuccess: () => ok("Re-indexing started — this runs in the background; the count updates when it finishes."),
     onError: fail,
   });
   const addDoc = useMutation({
@@ -71,9 +78,23 @@ export default function ChatbotAdmin() {
           <p className="text-sm text-slate-400">
             {status ? `${status.indexed_chunks} chunks indexed in "${status.collection}"` : "Status unavailable"}
           </p>
+          {status?.ingest_state === "running" && (
+            <p className="text-sm text-amber-500">Re-indexing in progress…</p>
+          )}
+          {status?.ingest_state === "failed" && (
+            <p className="text-sm text-red-500">Last re-index failed: {status.ingest_error}</p>
+          )}
         </div>
-        <button className="btn-primary" disabled={reingest.isPending} onClick={() => reingest.mutate()}>
-          {reingest.isPending ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+        <button
+          className="btn-primary"
+          disabled={reingest.isPending || status?.ingest_state === "running"}
+          onClick={() => reingest.mutate()}
+        >
+          {reingest.isPending || status?.ingest_state === "running" ? (
+            <Loader2 className="animate-spin" size={16} />
+          ) : (
+            <RefreshCw size={16} />
+          )}
           Re-index portfolio
         </button>
       </div>

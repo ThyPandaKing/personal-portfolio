@@ -6,6 +6,7 @@ stored on documents in the `vector_collection`; similarity search uses the
 `$vectorSearch` aggregation stage against an Atlas Vector Search index.
 """
 import logging
+import time
 from typing import Any
 
 from pymongo import ReplaceOne
@@ -18,6 +19,56 @@ from app.llm import get_embeddings
 logger = logging.getLogger("agent.vectorstore")
 
 _index_checked = False
+
+
+def _is_rate_limit_error(exc: BaseException) -> bool:
+    """Detect Gemini/Google rate-limit (429 / quota) errors across wrapper layers."""
+    status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+    if status == 429:
+        return True
+    text = str(exc).lower()
+    return any(
+        s in text
+        for s in ("429", "resource_exhausted", "rate limit", "quota", "too many requests")
+    )
+
+
+def _retry_after_seconds(exc: BaseException, default: float) -> float:
+    """Honor a server-provided retry delay if present, else use the supplied backoff."""
+    retry_delay = getattr(exc, "retry_after", None)
+    if isinstance(retry_delay, (int, float)) and retry_delay > 0:
+        return float(retry_delay)
+    return default
+
+
+def _embed_documents_with_retry(texts: list[str]) -> list[list[float]]:
+    """Embed texts in batches, retrying each batch with exponential backoff on 429s.
+
+    Embeddings are deliberately not part of the chat model fallback chain, so this
+    is where free-tier rate limits are absorbed instead of bubbling up as a 500.
+    """
+    settings = get_settings()
+    embeddings = get_embeddings()
+    batch_size = max(1, settings.embed_batch_size)
+    vectors: list[list[float]] = []
+    for start in range(0, len(texts), batch_size):
+        batch = texts[start : start + batch_size]
+        delay = settings.embed_retry_base_delay
+        for attempt in range(1, settings.embed_max_retries + 1):
+            try:
+                vectors.extend(embeddings.embed_documents(batch))
+                break
+            except Exception as exc:  # noqa: BLE001
+                if not _is_rate_limit_error(exc) or attempt == settings.embed_max_retries:
+                    raise
+                wait = _retry_after_seconds(exc, delay)
+                logger.warning(
+                    "Embedding rate-limited (batch at %d, attempt %d/%d); retrying in %.1fs: %s",
+                    start, attempt, settings.embed_max_retries, wait, exc,
+                )
+                time.sleep(wait)
+                delay = min(delay * 2, 60.0)
+    return vectors
 
 
 def _collection():
@@ -61,7 +112,7 @@ def add_documents(docs: list[dict[str, Any]]) -> int:
     """docs: list of {id, text, metadata}. Embeds with Gemini and upserts."""
     if not docs:
         return 0
-    vectors = get_embeddings().embed_documents([d["text"] for d in docs])
+    vectors = _embed_documents_with_retry([d["text"] for d in docs])
     ops = [
         ReplaceOne(
             {"_id": d["id"]},

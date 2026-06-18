@@ -1,10 +1,51 @@
 """Retrieval-Augmented Generation: ingest portfolio content and arbitrary docs."""
 import io
+import logging
+import threading
+import time
 from typing import Any
 
 from pypdf import PdfReader
 
 from app import db, vectorstore
+
+logger = logging.getLogger("agent.rag")
+
+# In-process state for the background re-ingest job, polled via GET /ingest/status.
+_ingest_lock = threading.Lock()
+ingest_status: dict[str, Any] = {
+    "state": "idle",  # idle | running | succeeded | failed
+    "detail": None,
+    "error": None,
+    "started_at": None,
+    "finished_at": None,
+}
+
+
+def run_portfolio_ingest_job() -> None:
+    """Full portfolio re-ingest, run in the background with status tracking.
+
+    Embedding the whole portfolio can take a while (and gets rate-limited on the
+    free tier), so callers fire this and poll /ingest/status instead of waiting.
+    A non-blocking lock prevents overlapping runs from a double-click.
+    """
+    if not _ingest_lock.acquire(blocking=False):
+        logger.info("Re-ingest already in progress; ignoring duplicate request")
+        return
+    try:
+        ingest_status.update(
+            state="running", detail=None, error=None, started_at=time.time(), finished_at=None
+        )
+        counts = ingest_portfolio()
+        ingest_status.update(state="succeeded", detail=counts, finished_at=time.time())
+        logger.info("Portfolio re-ingest finished: %s", counts)
+    except Exception as exc:  # noqa: BLE001 — record so /ingest/status can surface it
+        ingest_status.update(
+            state="failed", error=f"{type(exc).__name__}: {exc}", finished_at=time.time()
+        )
+        logger.exception("Portfolio re-ingest failed")
+    finally:
+        _ingest_lock.release()
 
 
 def _pdf_text(raw: bytes) -> str:

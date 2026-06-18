@@ -33,6 +33,9 @@ export async function warmup(): Promise<void> {
 export interface RagStatus {
   indexed_chunks: number;
   collection: string;
+  ingest_state?: "idle" | "running" | "succeeded" | "failed";
+  ingest_detail?: Record<string, number> | null;
+  ingest_error?: string | null;
 }
 
 export async function ragStatus(): Promise<RagStatus> {

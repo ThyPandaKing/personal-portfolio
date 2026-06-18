@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     vector_index: str = "vector_index"
     embed_dims: int = 3072  # Gemini models/gemini-embedding-001 → 3072 dimensions
 
+    # Embedding is rate-limited on the Gemini free tier, so re-ingest embeds in
+    # batches and retries each batch with exponential backoff on 429s.
+    embed_batch_size: int = 50
+    embed_max_retries: int = 5
+    embed_retry_base_delay: float = 2.0  # seconds; doubles each retry, capped at 60
+
     internal_api_key: str = "change-me-shared-with-backend"
 
     @property
