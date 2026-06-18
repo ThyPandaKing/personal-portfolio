@@ -104,7 +104,7 @@ orchestrated with Docker Compose.
 
 | Tool | What it does | Why |
 |------|--------------|-----|
-| **Node 20 + Express 4** | HTTP server / routing | Minimal, ubiquitous, easy middleware model. |
+| **Node 24 + Express 4** | HTTP server / routing | Minimal, ubiquitous, easy middleware model. |
 | **TypeScript** | Typing | Safety across models, routes, services. |
 | **Mongoose 8** | MongoDB ODM | Schemas, validation, indexes, GridFS access. |
 | **google-auth-library** | Verify Google ID tokens | Server-side verification of the login credential. |
@@ -147,7 +147,7 @@ Everything runs as containers via **`docker-compose.yml`**:
 | Service | Image / build | Port (host:container) | Notes |
 |---------|---------------|-----------------------|-------|
 | `frontend` | built → nginx | `3000:80` | Serves the SPA, proxies `/api` to backend. |
-| `backend` | Node 20 alpine | `4000:4000` | REST API. |
+| `backend` | Node 24 alpine | `4000:4000` | REST API. |
 | `agent-service` | Python 3.14 slim | `8001:8001` | AI service. |
 | *MongoDB* | **Atlas (cloud)** | — | Documents, GridFS files, and RAG vectors. Not containerized. |
 

@@ -4,7 +4,7 @@ The **source of truth** for the system: the REST API, authentication and
 authorization, request validation, file storage, and the proxy to the AI service.
 Everything that *writes* data or *checks who you are* happens here.
 
-- **Stack:** Node 20 · Express 4 · TypeScript · Mongoose 8 · zod · multer ·
+- **Stack:** Node 24 · Express 4 · TypeScript · Mongoose 8 · zod · multer ·
   `google-auth-library` · `jsonwebtoken` · swagger-ui-express · Vitest + Supertest.
 - **Source:** [`backend/src`](../backend/src)
 - **Port:** `4000` · **Health:** `GET /health` · **API docs:** `GET /api/docs`.
@@ -38,7 +38,7 @@ Everything that *writes* data or *checks who you are* happens here.
 
 | Tool | Role | Why |
 |------|------|-----|
-| **Node 20 + Express 4** | HTTP server / routing | Minimal, ubiquitous, a tiny and predictable middleware model. |
+| **Node 24 + Express 4** | HTTP server / routing | Minimal, ubiquitous, a tiny and predictable middleware model. |
 | **TypeScript** | Typing | Safety across models, routes, services; shared shapes with the SPA. |
 | **Mongoose 8** | MongoDB ODM | Schemas, validation, indexes, hooks, and GridFS access in one library. |
 | **zod** | Request validation | Declarative body schemas → consistent, detailed `400`s. |

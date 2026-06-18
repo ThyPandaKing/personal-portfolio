@@ -43,10 +43,11 @@ log lines **just above** that message — almost always one of:
    with an existing/ in-sync package-lock.json`.
 
 **The fix (already applied here):**
-- **Pinned Node 20** via `"engines": { "node": "20.x" }` in
+- **Pinned Node 24** via `"engines": { "node": "24.x" }` in
   [frontend/package.json](../frontend/package.json) **and** a
-  [frontend/.nvmrc](../frontend/.nvmrc) (`20`). Vercel reads both — the build now
-  runs on the same Node the lockfile was built with.
+  [frontend/.nvmrc](../frontend/.nvmrc) (`24`). Vercel reads both — the build now
+  runs on the same Node the lockfile was built with. (Node 24 ships npm 11, which
+  avoids the npm 10.8.2 "Exit handler never called!" crash from the now-EOL Node 20.)
 - Commit `frontend/package-lock.json`.
 - If the log specifically shows **`ERESOLVE`**, set Vercel → Settings → **Build &
   Development → Install Command** to `npm install --legacy-peer-deps` (or add a
@@ -64,7 +65,7 @@ log lines **just above** that message — almost always one of:
 All free: **GitHub**, **MongoDB Atlas**, **Google Cloud** (OAuth) + **Google AI
 Studio** (Gemini key), **Render**, **Vercel**.
 
-Local tools (only needed to verify before pushing): **git**, Node **20**, Python 3.14.
+Local tools (only needed to verify before pushing): **git**, Node **24**, Python 3.14.
 
 > **Verify locally before you deploy** — if it builds on your machine it'll build in
 > CI:

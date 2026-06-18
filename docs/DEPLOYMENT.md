@@ -131,7 +131,7 @@ cookies simple and the attack surface small (see [§12](#12-security-hardening-c
 Create free accounts (all have free tiers): **GitHub**, **MongoDB Atlas**,
 **Google Cloud** (OAuth) + **Google AI Studio** (Gemini key), **Render**, **Vercel**.
 
-Locally you need **git**, and optionally Node 20 / Python 3.14 / Docker for testing
+Locally you need **git**, and optionally Node 24 / Python 3.14 / Docker for testing
 before you push. Push this repository to a GitHub repo (it's the source of truth all
 three hosts deploy from):
 
@@ -221,7 +221,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: "20", cache: "npm", cache-dependency-path: backend/package-lock.json }
+        with: { node-version: "24", cache: "npm", cache-dependency-path: backend/package-lock.json }
       - run: npm ci            # reproducible install from the lockfile
       - run: npm run typecheck # tsc --noEmit: catches type errors
       - run: npm test          # Vitest + Supertest (~30 tests, see BACKEND.md §11)
@@ -232,7 +232,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: "20", cache: "npm", cache-dependency-path: frontend/package-lock.json }
+        with: { node-version: "24", cache: "npm", cache-dependency-path: frontend/package-lock.json }
       - run: npm ci
       - run: npm run build     # tsc -b && vite build: typecheck + production bundle
         env: { VITE_GOOGLE_CLIENT_ID: "ci-placeholder", VITE_API_BASE: "" }

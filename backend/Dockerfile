@@ -1,12 +1,8 @@
-FROM node:20-alpine
+# Node 24 (current LTS) ships npm 11, which avoids the "npm error Exit handler
+# never called!" crash/hang from npm 10.8.2 (bundled with the now-EOL node:20).
+FROM node:24-alpine
 
 WORKDIR /app
-
-# node:20-alpine ships npm 10.8.2, which crashes with "npm error Exit handler
-# never called!" during `npm ci` on these build hosts (a known npm 10.8.x bug
-# that left the install incomplete and broke `tsc`). Upgrade to npm 11 first so
-# the install actually completes.
-RUN npm install -g npm@11
 
 # Copy manifests first so this layer is cached unless dependencies change.
 COPY package*.json ./

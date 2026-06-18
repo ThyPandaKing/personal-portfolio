@@ -1,9 +1,7 @@
-FROM node:20-alpine AS build
+# Node 24 (current LTS) ships npm 11, which avoids the "npm error Exit handler
+# never called!" crash/hang from npm 10.8.2 (bundled with the now-EOL node:20).
+FROM node:24-alpine AS build
 WORKDIR /app
-# node:20-alpine ships npm 10.8.2, which crashes with "npm error Exit handler
-# never called!" during `npm ci` (a known npm 10.8.x bug). Upgrade to npm 11
-# first so the install completes.
-RUN npm install -g npm@11
 COPY package*.json ./
 # --include=dev: the build needs devDependencies (tsc, vite, @types/*) even if
 # NODE_ENV=production is set. npm ci is deterministic (installs from the lockfile).

@@ -36,7 +36,7 @@ chatbot (RAG over your projects/docs), and an AI resume generator.
 - **Google OAuth** client ID + secret (Google Cloud Console).
 - **Gemini API key** (free) — https://aistudio.google.com/app/apikey.
 - **Admin email(s)** — the Gmail address(es) allowed to sign in.
-- Docker Desktop (for the containerized run) and/or Node 20 + Python 3.14.
+- Docker Desktop (for the containerized run) and/or Node 24 + Python 3.14.
 
 Create the env files from the templates:
 
