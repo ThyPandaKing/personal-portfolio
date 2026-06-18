@@ -51,3 +51,39 @@ Common Instructions:
 - For AI use Gemini LLM for now
 - Make the UI very beautiful and self explanatory
 - Keep the UI theme Dark/Light (selected by anyone)
+
+
+Prompt:
+
+Software Engineer 2: 
+
+Time: Feb 2026 – Present
+Company: ServiceNow Hyderabad, India
+
+- Worked on CCM (Contineous Compliance Monitoring) framework which integrates with 10+ systems and ensures continous compliance by tsting 100% sample size. 
+- Framework monitors and tracks all changes, access and config across various platforms, and flags any discrepency.
+- This uses ServiceNow Event queues, scripting, mailing and dashboarding. end-to-end solution.
+- Owned architecture of a low-latency (<500ms p99) continuous controls monitoring platform using async pub-sub messaging and horizontal scaling; system sustains 10,000+ events/day throughput with sub-second processing under peak load, enabling 5,000+ automated hours/year.
+
+
+
+Software Engineer: 
+
+Time: July 2023 - Feb 2026
+Company: ServiceNow Hyderabad, India
+
+- Led end-to-end design and delivery of an event-driven access governance system built on a microservices architecture using Node.js and an internal async event broker; eliminated 800+ manual hours/year and achieved zero audit failures across all compliance cycles.
+
+
+- Architected LLM-powered (GPT-4 via REST) workflows for control analysis and automated remediation
+recommendations; reduced mean investigation time by 60% and cut analyst escalations significantly.
+
+
+Software Engineering Intern 
+
+Time: May 2022 – July 2022
+Company: ServiceNow Hyderabad, India
+- Built automated integration testing pipelines using parallel async execution, reducing end-to-end test suite runtime
+by 40%.
+- Designed failure detection pipelines covering authentication, server, and payload error classes; improved defect
+coverage and reduced production escape rate.

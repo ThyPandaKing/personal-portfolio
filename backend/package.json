@@ -14,6 +14,8 @@
     "typecheck": "tsc --noEmit",
     "migrate:urls": "tsx scripts/migrate-file-urls.ts",
     "seed": "tsx scripts/seed.ts",
+    "seed:projects": "tsx scripts/seed-projects.ts",
+    "seed:profile-blog": "tsx scripts/seed-profile-blog.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
