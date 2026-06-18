@@ -24,6 +24,19 @@ chatRouter.post(
   }),
 );
 
+/**
+ * GET /api/chat/warmup — public pre-heat. Reaching this wakes the backend
+ * (Render free tier), and it pings the agent service to wake that too, so the
+ * first real chat message doesn't pay both cold starts. Best-effort.
+ */
+chatRouter.get(
+  "/warmup",
+  asyncHandler(async (_req, res) => {
+    const agentReady = await agent.warmup();
+    res.json({ backend: "ok", agent: agentReady ? "ok" : "warming" });
+  }),
+);
+
 /* ----- Admin RAG management (proxied with the internal key) ----- */
 
 chatRouter.get(

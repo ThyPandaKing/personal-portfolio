@@ -19,6 +19,16 @@ export async function chat(message: string, history: ChatTurn[]) {
   return data as { answer: string; sources: { title: string; type: string }[] };
 }
 
+/** Best-effort ping to wake the agent service (Render free-tier cold start). */
+export async function warmup(): Promise<boolean> {
+  try {
+    await client.get("/health", { timeout: 5_000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function reingestPortfolio() {
   const { data } = await client.post("/ingest/portfolio", {}, { headers: internalHeaders });
   return data;

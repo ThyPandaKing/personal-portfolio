@@ -3,9 +3,12 @@ import { Briefcase, Lightbulb, Send, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import { sendChat } from "../../api/chat";
-import { apiErrorMessage } from "../../lib/api";
 import type { ChatMessage } from "../../types";
 import BotAvatar from "../BotAvatar";
+
+// Shown for any failure — never leak raw error logs to visitors.
+const MAINTENANCE_MESSAGE =
+  "⚠️ ChatBot is not working due to maintenance — kindly reach out to Aditya or check the [Projects](/projects) page.";
 
 const GREETING: ChatMessage = {
   role: "assistant",
@@ -135,8 +138,8 @@ export default function ChatWidget() {
         setTypingIdx(m.length); // the assistant message about to be appended
         return [...m, { role: "assistant", content: reply.answer, sources: reply.sources }];
       });
-    } catch (e) {
-      setMessages((m) => [...m, { role: "assistant", content: `⚠️ ${apiErrorMessage(e, "The assistant is unavailable.")}` }]);
+    } catch {
+      setMessages((m) => [...m, { role: "assistant", content: MAINTENANCE_MESSAGE }]);
     } finally {
       setLoading(false);
     }

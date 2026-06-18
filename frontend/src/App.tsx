@@ -1,5 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
+import { warmup } from "./api/chat";
 import Layout from "./components/layout/Layout";
 import RequireAdmin from "./components/RequireAdmin";
 import Spinner from "./components/ui/Spinner";
@@ -23,6 +24,11 @@ const ResumesAdmin = lazy(() => import("./pages/admin/ResumesAdmin"));
 const ChatbotAdmin = lazy(() => import("./pages/admin/ChatbotAdmin"));
 
 export default function App() {
+  // Pre-heat the free-tier backends on first load so the chatbot is ready fast.
+  useEffect(() => {
+    void warmup();
+  }, []);
+
   return (
     <Suspense fallback={<Spinner label="Loading…" />}>
       <Routes>

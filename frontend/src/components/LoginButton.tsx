@@ -28,22 +28,27 @@ export default function LoginButton() {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <GoogleLogin
-        onSuccess={async (resp) => {
-          setError("");
-          try {
-            if (resp.credential) await loginWithGoogle(resp.credential);
-          } catch (e) {
-            setError(apiErrorMessage(e, "Login failed"));
-          }
-        }}
-        onError={() => setError("Google login failed")}
-        useOneTap={false}
-        type="icon"
-        shape="circle"
-        size="large"
-        theme="filled_blue"
-      />
+      {/* Clip the GIS iframe to a circle: in some production builds the button's
+          iframe paints a white rectangular backing whose corners show around the
+          round logo. A tight, rounded, overflow-hidden box removes those corners. */}
+      <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full">
+        <GoogleLogin
+          onSuccess={async (resp) => {
+            setError("");
+            try {
+              if (resp.credential) await loginWithGoogle(resp.credential);
+            } catch (e) {
+              setError(apiErrorMessage(e, "Login failed"));
+            }
+          }}
+          onError={() => setError("Google login failed")}
+          useOneTap={false}
+          type="icon"
+          shape="circle"
+          size="large"
+          theme="filled_blue"
+        />
+      </div>
       {error && <span className="text-xs text-red-500">{error}</span>}
     </div>
   );

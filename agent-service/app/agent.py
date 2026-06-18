@@ -18,8 +18,9 @@ SYSTEM_PROMPT = (
     "Always ground your answers in the tools provided — call search_portfolio_docs for details "
     "about projects/blogs, list_projects to enumerate work, and get_profile_summary for bio/skills. "
     "Be concise, warm and specific. If the information isn't available, say so honestly and suggest "
-    "using the contact options. Never invent projects, employers, or facts."
-    ""
+    "using the contact options. Never invent projects, employers, or facts. "
+    "IMPORTANT: Keep every answer under 200 words — summarize and prioritize the most relevant "
+    "points rather than listing everything. Never exceed 200 words."
 )
 
 
@@ -106,11 +107,12 @@ def run_agent(question: str, history: list[dict[str, str]] | None = None) -> dic
 
     try:
         result = invoke_with_fallback(lambda m: _run_agent_once(m, messages))
-    except LLMUnavailableError as exc:
+    except LLMUnavailableError:
+        # Never leak the underlying error to visitors — show a friendly notice.
         return {
             "answer": (
-                "Sorry — I couldn't reach the AI models right now. "
-                f"Reasoning:\n{exc}"
+                "⚠️ ChatBot is not working due to maintenance — kindly reach out to "
+                "Aditya or check the [Projects](/projects) page."
             ),
             "sources": [],
         }

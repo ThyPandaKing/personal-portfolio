@@ -15,6 +15,19 @@ export async function sendChat(message: string, history: ChatMessage[]): Promise
   return data;
 }
 
+/**
+ * Fire-and-forget pre-heat: wakes the (free-tier) backend + agent service on
+ * first page load so the chatbot responds quickly. Failures are ignored — the
+ * request itself triggers the cold start even if it times out.
+ */
+export async function warmup(): Promise<void> {
+  try {
+    await api.get(endpoints.chat.warmup, { timeout: 15_000 });
+  } catch {
+    /* best-effort */
+  }
+}
+
 /* ----- Admin RAG management ----- */
 
 export interface RagStatus {

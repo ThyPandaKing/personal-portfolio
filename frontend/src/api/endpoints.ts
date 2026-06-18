@@ -41,6 +41,7 @@ export const endpoints = {
   },
   chat: {
     root: "/chat",
+    warmup: "/chat/warmup",
     admin: {
       status: "/chat/admin/status",
       reingest: "/chat/admin/reingest",
