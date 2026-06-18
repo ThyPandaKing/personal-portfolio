@@ -2,7 +2,10 @@
 # (Frontend deploys separately on Vercel — see frontend/vercel.json.)
 #
 # Usage: Render Dashboard → New → Blueprint → point at this repo.
-# Secrets marked `sync: false` are entered in the Render dashboard, not committed.
+# Only the `sync: false` keys need manual entry in the dashboard (real secrets):
+#   backend: CLIENT_ORIGINS, MONGO_URI, ADMIN_EMAILS, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+#   agent:   GOOGLE_API_KEY, MONGO_URI
+# Everything else (service URLs, INTERNAL_API_KEY sharing) is wired automatically.
 #
 # There is NO vector-store service: RAG vectors live in MongoDB Atlas
 # (Atlas Vector Search), the same DB used for everything else.
@@ -25,27 +28,29 @@ services:
         value: "true"
       - key: COOKIE_DOMAIN
         value: ""
-      # Set these in the dashboard:
-      - key: CLIENT_ORIGINS          # https://your-app.vercel.app
+      # ---- Secrets: enter once in the Render dashboard (never committed) ----
+      - key: CLIENT_ORIGINS          # your Vercel URL, e.g. https://your-app.vercel.app
         sync: false
-      - key: MONGO_URI
+      - key: MONGO_URI               # Atlas connection string
         sync: false
-      - key: MONGO_DB
-        value: portfolio
-      - key: ADMIN_EMAILS
+      - key: ADMIN_EMAILS            # Gmail(s) allowed to sign in
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
+      # ---- Non-secrets: committed so no dashboard entry is needed ----
+      - key: MONGO_DB
+        value: portfolio
       - key: JWT_SECRET
         generateValue: true
+      # Generated here and shared to the agent via fromService (see below).
       - key: INTERNAL_API_KEY
         generateValue: true
-      - key: AGENT_SERVICE_URL       # https://portfolio-agent.onrender.com
-        sync: false
-      - key: PUBLIC_BASE_URL         # https://portfolio-backend-7ocw.onrender.com
-        sync: false
+      - key: AGENT_SERVICE_URL
+        value: https://portfolio-agent-r09k.onrender.com
+      - key: PUBLIC_BASE_URL
+        value: https://portfolio-backend-7ocw.onrender.com
 
   # ---------------- Agent service (Python + FastAPI) ----------------
   - type: web
@@ -58,9 +63,11 @@ services:
     envVars:
       - key: PORT
         value: 8001
-      - key: ALLOWED_ORIGINS         # https://portfolio-backend-7ocw.onrender.com
-        sync: false
-      - key: GOOGLE_API_KEY
+      # The backend is the only caller (server-to-server). Non-secret — committed.
+      - key: ALLOWED_ORIGINS
+        value: https://portfolio-backend-7ocw.onrender.com
+      # ---- Secret: enter once in the Render dashboard ----
+      - key: GOOGLE_API_KEY          # Gemini API key
         sync: false
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
@@ -68,7 +75,7 @@ services:
         value: gemini-2.5-flash,gemini-flash-latest,gemini-2.0-flash
       - key: GEMINI_EMBED_MODEL
         value: models/gemini-embedding-001
-      - key: MONGO_URI
+      - key: MONGO_URI               # same Atlas string as the backend
         sync: false
       - key: MONGO_DB
         value: portfolio
@@ -77,5 +84,9 @@ services:
         value: portfolio_vectors
       - key: EMBED_DIMS
         value: 3072
-      - key: INTERNAL_API_KEY        # must match the backend's value
-        sync: false
+      # Auto-synced from the backend's generated INTERNAL_API_KEY — no manual copy.
+      - key: INTERNAL_API_KEY
+        fromService:
+          type: web
+          name: portfolio-backend
+          envVarKey: INTERNAL_API_KEY
