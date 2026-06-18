@@ -5,7 +5,8 @@ FROM node:24-alpine
 WORKDIR /app
 
 # Copy manifests first so this layer is cached unless dependencies change.
-COPY package*.json ./
+# .npmrc pins the public registry (deps must not be fetched from an internal one).
+COPY package*.json .npmrc ./
 
 # Install ALL dependencies, including devDependencies, so the TypeScript build
 # (`tsc`) can run. --include=dev forces devDependencies even when the build

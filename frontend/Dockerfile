@@ -2,7 +2,8 @@
 # never called!" crash/hang from npm 10.8.2 (bundled with the now-EOL node:20).
 FROM node:24-alpine AS build
 WORKDIR /app
-COPY package*.json ./
+# .npmrc pins the public registry (deps must not be fetched from an internal one).
+COPY package*.json .npmrc ./
 # --include=dev: the build needs devDependencies (tsc, vite, @types/*) even if
 # NODE_ENV=production is set. npm ci is deterministic (installs from the lockfile).
 RUN npm ci --include=dev --no-audit --no-fund
