@@ -116,6 +116,23 @@ body {
   to { width: 100%; }
 }
 
+/* ---------------- Chat bot mascot ---------------- */
+@keyframes bot-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
+}
+@keyframes bot-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.12); }
+}
+@keyframes bot-antenna {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+.bot-float { animation: bot-float 3.2s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.bot-blink { animation: bot-blink 4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+.bot-antenna { animation: bot-antenna 1.8s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+
 @media (prefers-reduced-motion: reduce) {
   [style*="animation"] { animation: none !important; }
 }

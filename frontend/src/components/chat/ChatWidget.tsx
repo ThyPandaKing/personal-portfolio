@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Briefcase, Lightbulb, Send, Sparkles, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
 import { sendChat } from "../../api/chat";
 import { apiErrorMessage } from "../../lib/api";
 import type { ChatMessage } from "../../types";
-import GuyAvatar from "../GuyAvatar";
+import BotAvatar from "../BotAvatar";
 
 const GREETING: ChatMessage = {
   role: "assistant",
@@ -30,14 +31,91 @@ const starters: { mode: Mode; label: string; icon: typeof Briefcase; hint: strin
   { mode: "project", label: "Insights on a project", icon: Lightbulb, hint: "Describe the project (or paste details), then send." },
 ];
 
+// Compact, chat-bubble-friendly markdown styling (bold, italics, links, lists, code).
+const mdComponents: Components = {
+  p: (p) => <p className="mb-2 leading-relaxed last:mb-0" {...p} />,
+  strong: (p) => <strong className="font-semibold text-slate-900 dark:text-white" {...p} />,
+  em: (p) => <em className="italic" {...p} />,
+  a: (p) => (
+    <a
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-medium text-brand-600 underline decoration-brand-400 underline-offset-2 hover:text-brand-700 dark:text-brand-300"
+      {...p}
+    />
+  ),
+  ul: (p) => <ul className="mb-2 list-disc space-y-0.5 pl-4 last:mb-0" {...p} />,
+  ol: (p) => <ol className="mb-2 list-decimal space-y-0.5 pl-4 last:mb-0" {...p} />,
+  li: (p) => <li className="leading-relaxed" {...p} />,
+  code: (p) => <code className="rounded bg-black/10 px-1 py-0.5 text-[0.85em] dark:bg-white/15" {...p} />,
+  h1: (p) => <h3 className="mb-1 mt-1 text-base font-bold" {...p} />,
+  h2: (p) => <h3 className="mb-1 mt-1 text-base font-bold" {...p} />,
+  h3: (p) => <h4 className="mb-1 mt-1 font-semibold" {...p} />,
+  blockquote: (p) => <blockquote className="border-l-2 border-brand-400 pl-2 italic opacity-90" {...p} />,
+};
+
+/**
+ * Renders an assistant message as markdown. When `animate` is set, the text is
+ * revealed progressively (ChatGPT-style typewriter) before settling on the full
+ * answer; `onTick` fires as text grows so the view can keep scrolling.
+ */
+function AssistantMessage({
+  text,
+  animate,
+  onTick,
+  onDone,
+}: {
+  text: string;
+  animate: boolean;
+  onTick?: () => void;
+  onDone?: () => void;
+}) {
+  const [shown, setShown] = useState(animate ? "" : text);
+
+  useEffect(() => {
+    if (!animate) {
+      setShown(text);
+      return;
+    }
+    let i = 0;
+    // Reveal faster for long answers so total time stays ~2s, slower for short ones.
+    const step = Math.max(2, Math.ceil(text.length / 140));
+    const id = setInterval(() => {
+      i += step;
+      if (i >= text.length) {
+        setShown(text);
+        clearInterval(id);
+        onDone?.();
+      } else {
+        setShown(text.slice(0, i));
+        onTick?.();
+      }
+    }, 16);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, animate]);
+
+  return (
+    <div className="text-sm">
+      <ReactMarkdown components={mdComponents}>{shown}</ReactMarkdown>
+      {animate && shown.length < text.length && (
+        <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-slate-400 align-text-bottom" />
+      )}
+    </div>
+  );
+}
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<Mode>(null);
   const [loading, setLoading] = useState(false);
+  const [typingIdx, setTypingIdx] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const scrollToEnd = useCallback(() => endRef.current?.scrollIntoView({ block: "end" }), []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,7 +131,10 @@ export default function ChatWidget() {
     setLoading(true);
     try {
       const reply = await sendChat(wrapped ?? text, history);
-      setMessages((m) => [...m, { role: "assistant", content: reply.answer, sources: reply.sources }]);
+      setMessages((m) => {
+        setTypingIdx(m.length); // the assistant message about to be appended
+        return [...m, { role: "assistant", content: reply.answer, sources: reply.sources }];
+      });
     } catch (e) {
       setMessages((m) => [...m, { role: "assistant", content: `⚠️ ${apiErrorMessage(e, "The assistant is unavailable.")}` }]);
     } finally {
@@ -85,10 +166,10 @@ export default function ChatWidget() {
     <>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-contrast shadow-glow transition hover:bg-accent-hover hover:shadow-glow-lg"
+        className="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-accent-contrast shadow-glow transition hover:bg-accent-hover hover:shadow-glow-lg"
         aria-label="Chat"
       >
-        {open ? <X size={22} /> : <GuyAvatar className="h-8 w-8" />}
+        {open ? <X size={24} /> : <BotAvatar className="h-12 w-12" />}
       </button>
 
       <AnimatePresence>
@@ -100,11 +181,11 @@ export default function ChatWidget() {
             transition={{ duration: 0.2 }}
             className="card fixed bottom-24 right-6 z-50 flex h-[78vh] max-h-[680px] w-[94vw] max-w-md flex-col overflow-hidden"
           >
-            <div className="flex items-center gap-2.5 border-b border-black/10 bg-accent p-4 text-accent-contrast">
-              <GuyAvatar className="h-9 w-9 shrink-0" />
+            <div className="flex items-center gap-3 border-b border-black/10 bg-accent p-4 text-accent-contrast">
+              <BotAvatar className="h-12 w-12 shrink-0" />
               <div>
-                <p className="font-semibold leading-tight">Portfolio Assistant</p>
-                <p className="text-xs text-accent-contrast/70">Powered by Gemini · RAG</p>
+                <p className="font-semibold leading-tight">Talk to AI-ditya 🤖</p>
+                <p className="text-xs text-accent-contrast/70">AI bot · Powered by Gemini · RAG</p>
               </div>
             </div>
 
@@ -118,7 +199,16 @@ export default function ChatWidget() {
                         : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap">{m.content}</p>
+                    {m.role === "user" ? (
+                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    ) : (
+                      <AssistantMessage
+                        text={m.content}
+                        animate={i === typingIdx}
+                        onTick={scrollToEnd}
+                        onDone={() => setTypingIdx(null)}
+                      />
+                    )}
                     {m.sources && m.sources.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {m.sources.map((s, j) => (

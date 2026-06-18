@@ -39,9 +39,10 @@ export default function LoginButton() {
         }}
         onError={() => setError("Google login failed")}
         useOneTap={false}
-        theme="outline"
-        size="medium"
-        shape="pill"
+        type="icon"
+        shape="circle"
+        size="large"
+        theme="filled_blue"
       />
       {error && <span className="text-xs text-red-500">{error}</span>}
     </div>
